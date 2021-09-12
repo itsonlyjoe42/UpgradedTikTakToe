@@ -1,11 +1,20 @@
+import pygame
+
+# Initialise player/choose how many starting pieces they have. Can implement colour choice here.
+
 class Player:
 
     def __init__(self, shape):
         self.shape = shape
+        if shape == 'x':
+            self.colour = (255, 0, 0)
+        else:
+            self.colour = (0, 0, 255)
 
-    l = 3
-    m = 3
-    s = 3
+
+    l = 1
+    m = 2
+    s = 5
 
 
 def printboard():
@@ -16,7 +25,17 @@ def printboard():
     print('\n')
 
 def makemove(player):
+
+    # Make sure that board will be changed outside of the function
+
     global board
+
+    # Keeps window from crashing
+
+    pygame.event.clear()
+
+    # Only make a valid move
+
     valid = False
     while not valid:
         size = input("%s, please input l for Large, m for medium or s for small" % player.shape)
@@ -36,6 +55,8 @@ def makemove(player):
             print('That is not a valid size, please try again')
             continue
 
+        # Remake coords (1-9?)
+
         try:
             place = int(input("Please choose a coordinate to place your piece (from 0 to 8)"))
         except:
@@ -47,8 +68,8 @@ def makemove(player):
         elif board[place] in range(9):
             board[place] = player.shape[0] + size
             valid = True
-        elif sizekey[board[place][1]] >= sizekey[size]:
-            print('You can only place a smaller piece on a bigger piece. Please try again')
+        elif sizeKey[board[place][1]] >= sizeKey[size]:
+            print('You can only place a bigger piece on a smaller piece. Please try again')
             continue
         else:
             board[place] = player.shape[0] + size
@@ -64,14 +85,20 @@ def makemove(player):
 
     printboard()
 
+    pygame.draw.circle(screen, player.colour, [(windowWidth / 3 + (place % 3) * windowWidth / 9 + windowWidth / 18),
+                                           (windowHeight / 3 + (place // 3) * windowHeight / 9 + windowHeight / 18)],
+                       min(windowHeight * sizeKey[size] / (3*18), windowWidth * sizeKey[size] / (3*18)))
+
 def wincheck():
     global win
     winner = None
 
     for shape in ['o', 'x']:
 
-        # row check
+
         for rowcol in range(3):
+
+        # row check
             if all(shape in str(board[i]) for i in range(3 * rowcol, 3 * rowcol + 3)):
                 print('win')
                 win = True
@@ -94,50 +121,58 @@ def wincheck():
             win = True
             winner = shape
 
+
     return win, winner
 
-
-# Start game
-
-"""Game Description:
-
-This is a two player game. Player one must choose to play as an o or x. Player two will play as the other.
-A player can place a piece on a square from 0 to 8 inclusive, with the goal of making a full row, column
-or diagonal their shape.
-
-A player can choose to place a small, medium or large piece. A large piece is bigger than a medium piece and a medium
-piece is bigger than a small piece. A player can place replace any smaller piece with a smaller piece.
-
-"""
-
-print("The goal of this game is to make a row, column or diagonal withes all o or all x.\n\
-You can choose to place a small, medium or large piece on your turn, and you can place a larger piece on a\n\
-smaller one")
-
-# p1shape = input("Player 1 choose o or x")
-# if p1shape == 'o':
-#   p2shape = 'x'
-# else:
-#   p1shape = 'x'
-#   p2shape = 'o'
-# print('Player one is ' + p1shape + ' and player 2 is ' + p2shape)
-
-p1shape, p2shape = 'o', 'x'
+p1shape, p2shape = 'x', 'o'
 p1 = Player(p1shape)
 p2 = Player(p2shape)
 
-sizekey = {'l': 3, 'm': 2, 's': 1}
+sizeKey = {'l': 3, 'm': 2, 's': 1}
 board = [i for i in range(9)]
 printboard()
 
+windowWidth, windowHeight = 600, 600
+
+# Set up the drawing window
+screen = pygame.display.set_mode([windowWidth, windowHeight])
+
+# Fill the background with white
+screen.fill((255, 255, 255))
+
+# Draw a solid blue circle in the center
+# pygame.draw.circle(screen, (0, 0, 255), (250, 250), 75)
+pygame.draw.lines(screen, (0, 0, 0), 1, [(windowWidth / 3, windowHeight / 3), (2 * windowWidth / 3, windowHeight / 3),
+                                         (2 * windowWidth / 3, 2 * windowHeight / 3),
+                                         (windowWidth / 3, 2 * windowHeight / 3)])
+for i in range(2):
+    pygame.draw.line(screen, (0, 0, 0), ((4 + i) * windowWidth / 9, windowHeight / 3),
+                     ((4 + i) * windowWidth / 9, 2 * windowHeight / 3))
+    pygame.draw.line(screen, (0, 0, 0), (windowWidth / 3, (4 + i) * windowHeight / 9),
+                     (2 * windowWidth / 3, (4 + i) * windowHeight / 9))
+
+# update the display
+pygame.display.flip()
+
+# Run until the user asks to quit
 win = False
 while not win:
-    makemove(p1)
-    win, winner = wincheck()
-    if win:
-        break
 
-    makemove(p2)
-    win, winner = wincheck()
+    # Did the user click the window close button?
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            win = True
+            winner = "No Winner"
 
-print(winner + ' is the Winner')
+    for person in [p1, p2]:
+        makemove(person)
+        win, winner = wincheck()
+        pygame.display.flip()
+        if win:
+            break
+
+# Done! Time to quit.
+
+input('Thanks for playing, type anything to quit')
+
+pygame.display.quit()
